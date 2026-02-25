@@ -117,6 +117,7 @@ use crate::{
 /// use cova_algebra::{algebras::clifford::QuadraticFormMarker, rings::Field, tensors::SVector};
 ///
 /// // Define a custom quadratic form for 2D split-complex numbers
+/// #[derive(Copy, Clone, Debug)]
 /// pub struct SplitComplex;
 ///
 /// impl<F: Field + From<f64>> QuadraticFormMarker<F, 2> for SplitComplex {
@@ -166,7 +167,7 @@ pub trait QuadraticFormMarker<F: Field, const N: usize>: 'static + Copy + Debug 
 /// // Define a signature for Cl(2,1) - 2D space with one negative direction
 /// type MySig = Signature<3, 1, 1, -1>;
 /// ```
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Signature<
   const N: usize,
   const C0: i64 = 1,
@@ -573,7 +574,7 @@ impl<F: Field, const N: usize, Q: QuadraticFormMarker<F, N>> MulAssign
 where [(); 1 << N]:
 {
   fn mul_assign(&mut self, rhs: Self) {
-    let result = self.clone() * rhs;
+    let result = *self * rhs;
     *self = result;
   }
 }
@@ -599,18 +600,7 @@ where [(); 1 << N]:
 {
   fn zero() -> Self { Self { value: SVector::<F, { 1 << N }>::zeros(), _marker: PhantomData } }
 
-  fn is_zero(&self) -> bool { self.value.iter().all(|x| x.is_zero()) }
-}
-
-<<<<<<< Updated upstream
-impl<F: Field, const N: usize> Additive for CliffordAlgebraElement<F, N> where [(); 1 << N]: {}
-impl<F: Field, const N: usize> Group for CliffordAlgebraElement<F, N>
-=======
-impl<F: Field, const N: usize, Q: QuadraticFormMarker<F, N>> ApproxZero
-  for CliffordAlgebraElement<F, N, Q>
-where [(); 1 << N]:
-{
-  fn is_approx_zero(&self) -> bool { self.value.iter().all(|x| x.is_approx_zero()) }
+  fn is_zero(&self) -> bool { self.value.iter().all(num_traits::Zero::is_zero) }
 }
 
 impl<F: Field, const N: usize, Q: QuadraticFormMarker<F, N>> Additive
@@ -621,12 +611,9 @@ where [(); 1 << N]:
 
 impl<F: Field, const N: usize, Q: QuadraticFormMarker<F, N>> Group
   for CliffordAlgebraElement<F, N, Q>
->>>>>>> Stashed changes
 where [(); 1 << N]:
 {
-  fn identity() -> Self {
-    CliffordAlgebraElement { value: SVector::<F, { 1 << N }>::zeros(), _marker: PhantomData }
-  }
+  fn identity() -> Self { Self { value: SVector::<F, { 1 << N }>::zeros(), _marker: PhantomData } }
 
   fn inverse(&self) -> Self { Self { value: -self.value, _marker: PhantomData } }
 }

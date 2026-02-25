@@ -692,4 +692,26 @@ mod tests {
     // Should be empty since no 3-cubes
     assert!(coboundary_2.is_empty());
   }
+<<<<<<< Updated upstream
+=======
+
+  #[test]
+  fn test_simplicial_sheaf_laplacian_1d() {
+    let (cc, restrictions, v0, v1, _) = simplicial_complex_1d();
+    let sheaf = Sheaf::<SimplicialComplex, DVector<f64>>::new(cc, restrictions);
+
+    let coboundary = sheaf.coboundary(0);
+    println!("{coboundary}");
+
+    let laplacian = sheaf.laplacian(0);
+    println!("{laplacian}");
+
+    let ker = kernel(&laplacian);
+    for v in &ker {
+      let section = sheaf.cochain_to_section(0, v);
+      assert_eq!(section.get(&v0).unwrap().data.as_slice(), &[1.0]);
+      assert_eq!(section.get(&v1).unwrap().data.as_slice(), &[0.5, 1.0]);
+    }
+  }
+>>>>>>> Stashed changes
 }

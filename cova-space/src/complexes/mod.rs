@@ -1369,7 +1369,7 @@ impl<T: ComplexElement> Topology for Complex<T> {
     self.cofaces(item)
   }
 
-  fn boundary<R: Ring + Copy>(&self, item: &Self::Item) -> Chain<Self, R> {
+  fn boundary<R: Ring + Copy>(&'_ self, item: &Self::Item) -> Chain<'_, Self, R> {
     if item.dimension() == 0 {
       return Chain::new(self);
     }

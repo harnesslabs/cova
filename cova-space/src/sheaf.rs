@@ -331,27 +331,25 @@ where T: Hash + Eq + Clone + Debug
         let boundary_with_orientations = k_plus_1_element.boundary_with_orientations();
         if let Some((_, orientation_coeff)) =
           boundary_with_orientations.iter().find(|(face, _)| face.same_content(k_element))
-        {
-          if let Some(restriction_matrix) =
+          && let Some(restriction_matrix) =
             self.restrictions.get(&(k_element.clone(), k_plus_1_element.clone()))
-          {
-            // Signed matrix
-            let mut signed = restriction_matrix.clone();
-            if *orientation_coeff < 0 {
-              for val in signed.iter_mut() {
-                *val = -*val;
-              }
-            } else if *orientation_coeff == 0 {
-              signed.fill(F::zero());
+        {
+          // Signed matrix
+          let mut signed = restriction_matrix.clone();
+          if *orientation_coeff < 0 {
+            for val in signed.iter_mut() {
+              *val = -*val;
             }
-
-            // Place into result
-            let row_offset = row_offsets[row_idx];
-            let col_offset = col_offsets[col_idx];
-            let r_rows = signed.nrows();
-            let r_cols = signed.ncols();
-            result.view_mut((row_offset, col_offset), (r_rows, r_cols)).copy_from(&signed);
+          } else if *orientation_coeff == 0 {
+            signed.fill(F::zero());
           }
+
+          // Place into result
+          let row_offset = row_offsets[row_idx];
+          let col_offset = col_offsets[col_idx];
+          let r_rows = signed.nrows();
+          let r_cols = signed.ncols();
+          result.view_mut((row_offset, col_offset), (r_rows, r_cols)).copy_from(&signed);
         }
       }
     }

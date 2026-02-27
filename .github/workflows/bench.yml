@@ -1,0 +1,15 @@
+name: Benchmarks
+on:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  bench:
+    name: Run Benchmarks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show Rust Toolchain
+        run: rustup show
+      - name: Run Benchmarks
+        run: cargo bench -p cova-algebra

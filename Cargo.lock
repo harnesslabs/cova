@@ -188,6 +188,7 @@ name = "cova-space"
 version = "0.2.3"
 dependencies = [
  "cova-algebra",
+ "criterion",
  "itertools 0.14.0",
  "num-traits",
  "rayon",

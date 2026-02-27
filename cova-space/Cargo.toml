@@ -25,6 +25,31 @@ rayon = { workspace = true, optional = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
+criterion = "0.5"
+
+[[bench]]
+name = "complexes"
+harness = false
+
+[[bench]]
+name = "filtration"
+harness = false
+
+[[bench]]
+name = "graph"
+harness = false
+
+[[bench]]
+name = "homology"
+harness = false
+
+[[bench]]
+name = "lattice"
+harness = false
+
+[[bench]]
+name = "sheaf"
+harness = false
 
 
 [features]

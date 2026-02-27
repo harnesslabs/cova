@@ -20,17 +20,17 @@ num-traits = { workspace = true }
 criterion = "0.5"
 
 [[bench]]
-name = "algebras"
 harness = false
+name    = "algebras"
 
 [[bench]]
-name = "arithmetic"
 harness = false
+name    = "arithmetic"
 
 [[bench]]
-name = "modules"
 harness = false
+name    = "modules"
 
 [[bench]]
-name = "tensors"
 harness = false
+name    = "tensors"

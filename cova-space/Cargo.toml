@@ -24,32 +24,32 @@ num-traits = { workspace = true }
 rayon = { workspace = true, optional = true }
 
 [dev-dependencies]
-tempfile = { workspace = true }
 criterion = "0.5"
+tempfile  = { workspace = true }
 
 [[bench]]
-name = "complexes"
 harness = false
+name    = "complexes"
 
 [[bench]]
-name = "filtration"
 harness = false
+name    = "filtration"
 
 [[bench]]
-name = "graph"
 harness = false
+name    = "graph"
 
 [[bench]]
-name = "homology"
 harness = false
+name    = "homology"
 
 [[bench]]
-name = "lattice"
 harness = false
+name    = "lattice"
 
 [[bench]]
-name = "sheaf"
 harness = false
+name    = "sheaf"
 
 
 [features]

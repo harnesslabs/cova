@@ -7,8 +7,8 @@
 use cova_algebra::tensors::{DMatrix, DVector};
 
 use crate::{
-  traits::{OptimizationProblem, Solution},
   SolverError, SolverResult,
+  traits::{OptimizationProblem, Solution},
 };
 
 /// Linear programming problem: minimize c^T x subject to Ax <= b, x >= 0

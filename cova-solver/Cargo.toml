@@ -21,9 +21,9 @@ thiserror    = { workspace = true }
 criterion = "0.5"
 
 [[bench]]
-name = "linear_programming"
 harness = false
+name    = "linear_programming"
 
 [[bench]]
-name = "admm"
 harness = false
+name    = "admm"

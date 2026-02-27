@@ -1,14 +1,14 @@
 [package]
-edition = "2024"
-name    = "cova-solver"
-version = "0.1.0"
+name = "cova-solver"
 
 authors     = ["Harness Labs"]
 description = "Cova's solvers library"
+edition     = "2024"
 keywords    = ["mathematics", "algebra", "solvers", "numerical"]
 license     = "AGPL-3.0"
 readme      = "README.md"
 repository  = "https://github.com/harnesslabs/cova"
+version     = "0.1.2"
 
 include = ["src/**/*", "Cargo.toml", "README.md", "katex-header.html"]
 

@@ -10,15 +10,10 @@ build-dir                 = "docs"
 create-missing            = true
 use-default-preprocessors = false
 
-[preprocessor.links]
-
-[preprocessor.katex]
-after = ["links"]
-
-[output.linkcheck]
-follow-web-links            = false    # TODO (autoparallel): fix this
-traverse-parent-directories = true
-warning-policy              = "ignore"
+# [preprocessor.linkcheck]
+# follow-web-links            = false    # TODO (autoparallel): fix this
+# traverse-parent-directories = true
+# warning-policy              = "ignore"
 
 # TODO (autoparallel): there's a bunch to fix with this
 # [preprocessor.keeper]
@@ -28,11 +23,11 @@ warning-policy              = "ignore"
 default-theme        = "dark"
 git-repository-url   = "https://github.com/harnesslabs/cova"
 preferred-dark-theme = "ayu"
-site-url             = "https://cova.harnesslabs.xyz"
+site-url             = "https://cova.harnesslabs.dev"
 
 [output.html.playground]
 editable = true
 runnable = true
 
 [rust]
-edition = "2021"
+edition = "2024"

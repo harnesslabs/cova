@@ -64,7 +64,7 @@
 //! ```
 //!
 //! When the `"parallel"` feature is enabled, this module also provides implementations for
-//! [`ParallelFiltration`] to leverage multi-core processing
+//! `ParallelFiltration` to leverage multi-core processing
 //! for building the filtration and computing homology.
 
 use std::{

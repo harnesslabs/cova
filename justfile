@@ -140,7 +140,7 @@ book-check:
 # Open cargo docs in browser
 docs:
     @just header "Building and opening cargo docs"
-    cargo doc --workspace --no-deps --open
+    cargo doc --workspace --no-deps --open --all-features
 
 doc-check:
     @just header "Checking cargo docs"

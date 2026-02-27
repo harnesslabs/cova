@@ -9,14 +9,14 @@
 //! A category $\mathcal{C}$ consists of:
 //! - A collection of **objects**, denoted $\text{ob}(\mathcal{C})$.
 //! - For every pair of objects $A, B \in \text{ob}(\mathcal{C})$, a collection of **morphisms** (or
-//!   arrows) from $A$ to $B$, denoted $\text{Hom}_{\mathcal{C}}(A, B)$. If $f \in
-//!   \text{Hom}_{\mathcal{C}}(A, B)$, we write $f: A \to B$.
-//! - For every object $A \in \text{ob}(\mathcal{C})$, an **identity morphism** $\text{id}_A: A \to
+//!   arrows) from $A$ to $B$, denoted $\text{Hom}\_{\mathcal{C}}(A, B)$. If $f \in
+//!   \text{Hom}\_{\mathcal{C}}(A, B)$, we write $f: A \to B$.
+//! - For every object $A \in \text{ob}(\mathcal{C})$, an **identity morphism** $\text{id}\_A: A \to
 //!   A$.
 //! - For every triple of objects $A, B, C \in \text{ob}(\mathcal{C})$, a binary operation called
-//!   **composition of morphisms**, $ \circ : \text{Hom}_{\mathcal{C}}(B, C) \times
-//!   \text{Hom}_{\mathcal{C}}(A, B) \to \text{Hom}_{\mathcal{C}}(A, C)$. Given $g: B \to C$ and $f:
-//!   A \to B$, their composition is written $g \circ f: A \to C$.
+//!   **composition of morphisms**, $ \circ : \text{Hom}\_{\mathcal{C}}(B, C) \times
+//!   \text{Hom}\_{\mathcal{C}}(A, B) \to \text{Hom}_{\mathcal{C}}(A, C)$. Given $g: B \to C$ and
+//!   $f: A \to B$, their composition is written $g \circ f: A \to C$.
 //!
 //! These components must satisfy two axioms:
 //! 1. **Associativity**: For any morphisms $f: A \to B$, $g: B \to C$, and $h: C \to D$, the

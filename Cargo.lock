@@ -180,6 +180,7 @@ version = "0.1.2"
 dependencies = [
  "clarabel",
  "cova-algebra",
+ "criterion",
  "thiserror 2.0.18",
 ]
 

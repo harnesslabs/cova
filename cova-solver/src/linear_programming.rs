@@ -1,13 +1,9 @@
-//! Linear Programming using argmin framework
+//! Linear Programming using self-contained gradient descent
 //!
-//! This module implements linear programming solvers using argmin's optimization framework.
-//! We transform the linear program into a form suitable for gradient-based optimization.
+//! This module implements linear programming solvers using a penalty-based
+//! steepest descent method. The solver is self-contained and only depends
+//! on `cova-algebra` types (`DVector`, `DMatrix`).
 
-use argmin::{
-  core::{CostFunction, Executor, Gradient},
-  solver::{gradientdescent::SteepestDescent, linesearch::BacktrackingLineSearch},
-};
-use argmin_math::ArgminDot;
 use cova_algebra::tensors::{DMatrix, DVector};
 
 use crate::{
@@ -65,15 +61,11 @@ impl LinearProgram {
     self.max_iterations = max_iterations;
     self
   }
-}
 
-/// Cost function for linear programming with penalty method
-/// We minimize: c^T x + penalty * sum(max(0, Ax - b)) + penalty * sum(max(0, -x))
-impl CostFunction for LinearProgram {
-  type Output = f64;
-  type Param = DVector<f64>;
-
-  fn cost(&self, x: &Self::Param) -> Result<Self::Output, argmin::core::Error> {
+  /// Evaluate the penalised cost function at `x`.
+  ///
+  /// cost(x) = c^T x + penalty * Σ max(0, (Ax-b)_i)² + penalty * Σ max(0, -x_i)²
+  pub fn cost(&self, x: &DVector<f64>) -> f64 {
     let penalty = 1000.0;
 
     // Original objective
@@ -86,16 +78,11 @@ impl CostFunction for LinearProgram {
     // Non-negativity violations: x >= 0
     let nonnegativity_penalty: f64 = x.iter().map(|&v| (-v).max(0.0).powi(2)).sum();
 
-    Ok(objective + penalty * (constraint_penalty + nonnegativity_penalty))
+    objective + penalty * (constraint_penalty + nonnegativity_penalty)
   }
-}
 
-/// Gradient for the linear programming cost function
-impl Gradient for LinearProgram {
-  type Gradient = DVector<f64>;
-  type Param = DVector<f64>;
-
-  fn gradient(&self, x: &Self::Param) -> Result<Self::Gradient, argmin::core::Error> {
+  /// Evaluate the gradient of the penalised cost function at `x`.
+  pub fn gradient(&self, x: &DVector<f64>) -> DVector<f64> {
     let penalty = 1000.0;
     let mut grad = self.c.clone();
 
@@ -116,7 +103,7 @@ impl Gradient for LinearProgram {
       }
     }
 
-    Ok(grad)
+    grad
   }
 }
 
@@ -124,34 +111,60 @@ impl OptimizationProblem for LinearProgram {
   fn dimension(&self) -> usize { self.c.len() }
 
   fn solve(&self) -> SolverResult<Solution> {
-    // Initial guess: zeros
-    let init_param = DVector::zeros(self.dimension());
+    let n = self.dimension();
+    let mut x = DVector::zeros(n);
+    let mut step_size = 1e-3;
+    let mut prev_cost = self.cost(&x);
 
-    // Set up line search
-    let linesearch = BacktrackingLineSearch::new();
+    for iteration in 0..self.max_iterations {
+      let grad = self.gradient(&x);
+      let grad_norm = grad.norm();
 
-    // Set up solver
-    let solver = SteepestDescent::new(linesearch);
-
-    // Set up executor
-    let res = Executor::new(self.clone(), solver)
-      .configure(|state| state.param(init_param).max_iters(self.max_iterations).target_cost(0.0))
-      .run();
-
-    match res {
-      Ok(result) => {
-        let state = result.state();
-        let x = state.best_param.clone().unwrap();
+      if grad_norm < self.tolerance {
         let objective_value = self.c.dot(&x);
-        let iterations = state.iter;
-        let converged = state.cost < self.tolerance;
-        let termination = format!("{:?}", state.termination_reason);
+        return Ok(Solution {
+          x,
+          objective_value,
+          iterations: iteration + 1,
+          converged: true,
+          termination: "GradientNormConverged".to_string(),
+        });
+      }
 
-        Ok(Solution { x, objective_value, iterations, converged, termination })
-      },
-      Err(e) =>
-        Err(SolverError::NumericalError { message: format!("Argmin solver failed: {}", e) }),
+      // Backtracking line search
+      let direction = -&grad / grad_norm;
+      let mut alpha = step_size;
+      let armijo_c = 1e-4;
+
+      for _ in 0..20 {
+        let x_new = &x + alpha * &direction;
+        let new_cost = self.cost(&x_new);
+        if new_cost <= prev_cost + armijo_c * alpha * grad.dot(&direction) {
+          break;
+        }
+        alpha *= 0.5;
+      }
+
+      x = &x + alpha * &direction;
+      let new_cost = self.cost(&x);
+
+      // Adaptive step size
+      if new_cost < prev_cost {
+        step_size *= 1.1;
+      } else {
+        step_size *= 0.5;
+      }
+      prev_cost = new_cost;
     }
+
+    let objective_value = self.c.dot(&x);
+    Ok(Solution {
+      x,
+      objective_value,
+      iterations: self.max_iterations,
+      converged: false,
+      termination: "MaxIterations".to_string(),
+    })
   }
 }
 

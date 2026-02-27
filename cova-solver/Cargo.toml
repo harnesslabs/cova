@@ -16,3 +16,14 @@ include = ["src/**/*", "Cargo.toml", "README.md", "katex-header.html"]
 clarabel     = "0.11"
 cova-algebra = { workspace = true }
 thiserror    = { workspace = true }
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "linear_programming"
+harness = false
+
+[[bench]]
+name = "admm"
+harness = false

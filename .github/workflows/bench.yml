@@ -15,3 +15,5 @@ jobs:
         run: cargo bench -p cova-algebra
       - name: Run cova-space Benchmarks
         run: cargo bench -p cova-space
+      - name: Run cova-solver Benchmarks
+        run: cargo bench -p cova-solver

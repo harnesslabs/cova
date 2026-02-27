@@ -24,6 +24,11 @@
   <a href="https://docs.rs/cova-algebra"><img src="https://img.shields.io/docsrs/cova-algebra?label=docs.rs%20cova-algebra" alt="docs.rs - cova-algebra"></a>
 </p>
 
+<p align="center">
+  <a href="https://crates.io/crates/cova-solver"><img src="https://img.shields.io/crates/v/cova-solver?label=cova-solver" alt="Crates.io - cova-solver"></a>
+  <a href="https://docs.rs/cova-solver"><img src="https://img.shields.io/docsrs/cova-solver?label=docs.rs%20cova-solver" alt="docs.rs - cova-solver"></a>
+</p>
+
 # Cova
 
 A Rust ecosystem for mathematical abstractions and computations, focusing on rigorous implementations of algebraic structures, topological spaces, and computational mathematics.

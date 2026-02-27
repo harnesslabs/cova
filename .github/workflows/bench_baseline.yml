@@ -32,13 +32,13 @@ jobs:
             benchmark-data-
 
       - name: Run cova-algebra benchmarks
-        run: cargo bench -p cova-algebra -- --output-format bencher | tee algebra_bench.txt
+        run: cargo bench -p cova-algebra --benches -- --output-format bencher | tee algebra_bench.txt
 
       - name: Run cova-solver benchmarks
-        run: cargo bench -p cova-solver -- --output-format bencher | tee solver_bench.txt
+        run: cargo bench -p cova-solver --benches -- --output-format bencher | tee solver_bench.txt
 
       - name: Run cova-space benchmarks
-        run: cargo bench -p cova-space -- --output-format bencher | tee space_bench.txt
+        run: cargo bench -p cova-space --benches -- --output-format bencher | tee space_bench.txt
 
       - name: Combine benchmark results
         run: cat algebra_bench.txt solver_bench.txt space_bench.txt > all_bench.txt

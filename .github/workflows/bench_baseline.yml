@@ -31,24 +31,18 @@ jobs:
           restore-keys: |
             benchmark-data-
 
-      - name: Run cova-algebra benchmarks
-        run: cargo bench -p cova-algebra --benches -- --output-format bencher | tee algebra_bench.txt
-
-      - name: Run cova-solver benchmarks
-        run: cargo bench -p cova-solver --benches -- --output-format bencher | tee solver_bench.txt
-
-      - name: Run cova-space benchmarks
-        run: cargo bench -p cova-space --benches -- --output-format bencher | tee space_bench.txt
-
-      - name: Combine benchmark results
-        run: cat algebra_bench.txt solver_bench.txt space_bench.txt > all_bench.txt
+      - name: Run benchmarks
+        run: |
+          cargo bench -p cova-algebra --bench '*' -- --output-format bencher | tee output.txt
+          cargo bench -p cova-solver --bench '*' -- --output-format bencher | tee -a output.txt
+          cargo bench -p cova-space --bench '*' -- --output-format bencher | tee -a output.txt
 
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
         with:
           name: Cova Benchmarks
           tool: 'cargo'
-          output-file-path: all_bench.txt
+          output-file-path: output.txt
           external-data-json-path: ./cache/benchmark-data.json
           summary-always: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -65,7 +59,7 @@ jobs:
         with:
           name: Cova Benchmarks
           tool: 'cargo'
-          output-file-path: all_bench.txt
+          output-file-path: output.txt
           external-data-json-path: ./benchmark-dashboard/data.js
           auto-push: false
           save-data-file: true

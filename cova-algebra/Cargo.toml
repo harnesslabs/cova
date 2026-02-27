@@ -10,6 +10,8 @@ readme      = "README.md"
 repository  = "https://github.com/harnesslabs/cova"
 version     = "0.2.0"
 
+include = ["katex-header.html"]
+
 [dependencies]
 nalgebra   = { workspace = true, features = ["std"] }
 num-traits = { workspace = true }

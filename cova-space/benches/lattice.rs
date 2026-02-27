@@ -42,5 +42,30 @@ fn bench_lattice(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, bench_lattice);
+fn bench_lattice_large(c: &mut Criterion) {
+    let mut group = c.benchmark_group("Lattice Large");
+
+    // Building a 500-element chain
+    group.bench_function("add_relation_500", |b| b.iter(|| {
+        let mut lattice = Lattice::new();
+        for i in 0..500 {
+            lattice.add_relation(black_box(i), black_box(i + 1));
+        }
+        black_box(lattice)
+    }));
+
+    // leq traversal over a 500-element chain
+    let mut large_lattice = Lattice::new();
+    for i in 0..500 {
+        large_lattice.add_relation(i, i + 1);
+    }
+
+    group.bench_function("leq_500", |b| b.iter(|| {
+        black_box(large_lattice.leq(black_box(&0), black_box(&250)))
+    }));
+
+    group.finish();
+}
+
+criterion_group!(benches, bench_lattice, bench_lattice_large);
 criterion_main!(benches);

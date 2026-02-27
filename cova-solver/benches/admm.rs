@@ -60,5 +60,47 @@ fn bench_admm(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, bench_admm);
+fn bench_admm_large(c: &mut Criterion) {
+    let mut group = c.benchmark_group("Admm Large");
+
+    group.bench_function("lasso_large", |b| b.iter_with_large_drop(|| {
+        let n_vars = 50;
+        let n_obs = 100;
+        let mut a = DMatrix::zeros(n_obs, n_vars);
+        for i in 0..n_obs {
+            for j in 0..n_vars {
+                a[(i, j)] = ((i * 7 + j * 13 + 3) % 97) as f64 * 0.01;
+            }
+        }
+        let b_vec = DVector::from_element(n_obs, 2.0);
+        let lambda = 0.1;
+        
+        let mut solver = AdmmSolver::new();
+        black_box(solver.solve_lasso(black_box(&a), black_box(&b_vec), black_box(lambda)).unwrap())
+    }));
+
+    group.bench_function("basis_pursuit_large", |b| b.iter_with_large_drop(|| {
+        let n_vars = 50;
+        let n_eq = 25; // Under-determined: fewer equations than variables
+        let mut a = DMatrix::zeros(n_eq, n_vars);
+        for i in 0..n_eq {
+            for j in 0..n_vars {
+                a[(i, j)] = ((i * 7 + j * 13 + 3) % 97) as f64 * 0.01;
+            }
+        }
+        let mut b_vec = DVector::zeros(n_eq);
+        for i in 0..n_eq {
+            for j in 0..n_vars {
+                b_vec[i] += a[(i, j)] * 1.0;
+            }
+        }
+        
+        let mut solver = AdmmSolver::new();
+        black_box(solver.solve_basis_pursuit(black_box(&a), black_box(&b_vec)).unwrap())
+    }));
+
+    group.finish();
+}
+
+criterion_group!(benches, bench_admm, bench_admm_large);
 criterion_main!(benches);

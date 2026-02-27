@@ -21,7 +21,7 @@ fn bench_filtration(c: &mut Criterion) {
     let vr: VietorisRips<2, cova_space::complexes::Complex<cova_space::complexes::Simplex>> = VietorisRips::new();
 
     let params: Vec<f64> = vec![0.1, 0.5, 0.8, 1.2, 1.5];
-    let max_dim = 2; // Up to 2-simplices
+    let _max_dim = 2; // Up to 2-simplices
 
     group.bench_function("vietoris_rips_build", |b| b.iter(|| {
         black_box(vr.build(black_box(&cloud), black_box(1.0), black_box(&())))
@@ -39,5 +39,49 @@ fn bench_filtration(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, bench_filtration);
+/// Generate n points evenly spaced on a unit circle in R²
+fn circle_points(n: usize) -> Vec<SVector<f64, 2>> {
+    (0..n).map(|i| {
+        let theta = 2.0 * std::f64::consts::PI * (i as f64) / (n as f64);
+        SVector::from([theta.cos(), theta.sin()])
+    }).collect()
+}
+
+fn bench_filtration_20pts(c: &mut Criterion) {
+    let mut group = c.benchmark_group("Filtration 20pts");
+
+    let cloud = Cloud::new(circle_points(20));
+    let vr: VietorisRips<2, cova_space::complexes::Complex<cova_space::complexes::Simplex>> = VietorisRips::new();
+    let params: Vec<f64> = vec![0.3, 0.6, 0.9, 1.2, 1.5];
+
+    group.bench_function("vietoris_rips_build_20pts", |b| b.iter(|| {
+        black_box(vr.build(black_box(&cloud), black_box(0.8), black_box(&())))
+    }));
+
+    group.bench_function("vietoris_rips_build_serial_20pts", |b| b.iter(|| {
+        black_box(vr.build_serial(black_box(&cloud), black_box(params.clone()), black_box(&())))
+    }));
+
+    group.finish();
+}
+
+fn bench_filtration_50pts(c: &mut Criterion) {
+    let mut group = c.benchmark_group("Filtration 50pts");
+
+    let cloud = Cloud::new(circle_points(50));
+    let vr: VietorisRips<2, cova_space::complexes::Complex<cova_space::complexes::Simplex>> = VietorisRips::new();
+    let params: Vec<f64> = vec![0.3, 0.6, 0.9, 1.2, 1.5];
+
+    group.bench_function("vietoris_rips_build_50pts", |b| b.iter(|| {
+        black_box(vr.build(black_box(&cloud), black_box(0.5), black_box(&())))
+    }));
+
+    group.bench_function("vietoris_rips_build_serial_50pts", |b| b.iter(|| {
+        black_box(vr.build_serial(black_box(&cloud), black_box(params.clone()), black_box(&())))
+    }));
+
+    group.finish();
+}
+
+criterion_group!(benches, bench_filtration, bench_filtration_20pts, bench_filtration_50pts);
 criterion_main!(benches);

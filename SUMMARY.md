@@ -4,3 +4,4 @@
 - [Examples](examples/README.md)
     - [Vietoris-Rips Complex Demo](examples/vietoris_web/README.md)
 - [Contributing](CONTRIBUTING.md)
+- [Benchmarks](bench/index.html)

@@ -1,0 +1,64 @@
+name: Benchmark PR
+on:
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  bench:
+    name: Benchmark Comparison
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly-2026-02-25
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+
+      - name: Restore baseline benchmark data
+        uses: actions/cache/restore@v4
+        with:
+          path: ./cache
+          key: benchmark-data-${{ github.event.pull_request.base.sha }}
+          restore-keys: |
+            benchmark-data-
+
+      - name: Run cova-algebra benchmarks
+        run: cargo bench -p cova-algebra -- --output-format bencher | tee algebra_bench.txt
+
+      - name: Run cova-solver benchmarks
+        run: cargo bench -p cova-solver -- --output-format bencher | tee solver_bench.txt
+
+      - name: Run cova-space benchmarks
+        run: cargo bench -p cova-space -- --output-format bencher | tee space_bench.txt
+
+      - name: Combine benchmark results
+        run: cat algebra_bench.txt solver_bench.txt space_bench.txt > all_bench.txt
+
+      - name: Compare against baseline
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: Cova Benchmarks
+          tool: 'cargo'
+          output-file-path: all_bench.txt
+          external-data-json-path: ./cache/benchmark-data.json
+          # Do not update the baseline from PRs
+          save-data-file: false
+          # Post comparison as PR comment
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          comment-on-alert: true
+          comment-always: true
+          summary-always: true
+          # Fail if any benchmark regresses >25%
+          alert-threshold: '125%'
+          fail-on-alert: true
+          fail-threshold: '125%'

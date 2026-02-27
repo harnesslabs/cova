@@ -1,0 +1,78 @@
+name: Benchmark Baseline
+on:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  bench:
+    name: Run Benchmarks (Baseline)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly-2026-02-25
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+
+      - name: Restore previous benchmark data
+        uses: actions/cache/restore@v4
+        with:
+          path: ./cache
+          key: benchmark-data-${{ github.sha }}
+          restore-keys: |
+            benchmark-data-
+
+      - name: Run cova-algebra benchmarks
+        run: cargo bench -p cova-algebra -- --output-format bencher | tee algebra_bench.txt
+
+      - name: Run cova-solver benchmarks
+        run: cargo bench -p cova-solver -- --output-format bencher | tee solver_bench.txt
+
+      - name: Run cova-space benchmarks
+        run: cargo bench -p cova-space -- --output-format bencher | tee space_bench.txt
+
+      - name: Combine benchmark results
+        run: cat algebra_bench.txt solver_bench.txt space_bench.txt > all_bench.txt
+
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: Cova Benchmarks
+          tool: 'cargo'
+          output-file-path: all_bench.txt
+          external-data-json-path: ./cache/benchmark-data.json
+          summary-always: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Save benchmark data to cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ./cache
+          key: benchmark-data-${{ github.sha }}
+
+      - name: Generate benchmark dashboard
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: Cova Benchmarks
+          tool: 'cargo'
+          output-file-path: all_bench.txt
+          external-data-json-path: ./benchmark-dashboard/data.js
+          auto-push: false
+          save-data-file: true
+
+      - name: Upload benchmark dashboard artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-dashboard
+          path: ./benchmark-dashboard/
+          retention-days: 90

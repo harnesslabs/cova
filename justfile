@@ -97,6 +97,18 @@ test:
     @just header "Running doc tests"
     cargo test --workspace --doc
 
+# Run all benchmarks
+bench:
+    @just header "Running benchmarks"
+    cargo bench -p cova-algebra
+    cargo bench -p cova-solver
+    cargo bench -p cova-space
+
+# Run benchmarks for a specific crate
+bench-crate crate:
+    @just header "Running {{crate}} benchmarks"
+    cargo bench -p {{crate}}
+
 # Run clippy for the workspace on your local OS
 lint:
     @just header "Running clippy"

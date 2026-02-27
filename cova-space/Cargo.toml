@@ -3,7 +3,7 @@ name = "cova-space"
 
 authors     = ["Harness Labs"]
 description = "Cova's geometric and topological library"
-edition     = "2021"
+edition     = "2024"
 keywords    = ["mathematics", "topology", "geometry"]
 license     = "AGPL-3.0"
 readme      = "README.md"

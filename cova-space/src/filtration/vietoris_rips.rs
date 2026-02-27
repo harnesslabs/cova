@@ -43,7 +43,7 @@
 //! use cova_space::{
 //!   cloud::Cloud,
 //!   complexes::SimplicialComplex,
-//!   filtration::{vietoris_rips::VietorisRips, Filtration},
+//!   filtration::{Filtration, vietoris_rips::VietorisRips},
 //! };
 //!
 //! // Example: Create a cloud of 3 points forming a triangle

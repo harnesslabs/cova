@@ -109,13 +109,7 @@ macro_rules! modular {
     impl std::ops::Neg for $name {
       type Output = Self;
 
-      fn neg(self) -> Self {
-        if self.0 == 0 {
-          self
-        } else {
-          Self::new(Self::MODULUS - self.0)
-        }
-      }
+      fn neg(self) -> Self { if self.0 == 0 { self } else { Self::new(Self::MODULUS - self.0) } }
     }
 
     impl std::ops::Sub for $name {

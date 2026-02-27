@@ -602,7 +602,7 @@ impl<T: Hash + Eq + Clone + std::fmt::Display + Ord> Lattice<T> {
     // Define nodes
     for node_key_ptr in &sorted_node_keys {
       let node_key = *node_key_ptr; // node_key is &T
-                                    // node_key.to_string() requires T: std::fmt::Display
+      // node_key.to_string() requires T: std::fmt::Display
       writeln!(file, "  \"{}\";", escape_dot_label(&node_key.to_string()))?;
     }
     writeln!(file)?; // Blank line for readability

@@ -3,12 +3,12 @@ name = "cova"
 
 authors     = ["Harness Labs"]
 description = "First principles, minimally dependent, geometric and topologically focused math library"
-edition     = "2021"
+edition     = "2024"
 keywords    = ["mathematics", "topology", "geometry"]
 license     = "AGPL-3.0"
 readme      = "README.md"
 repository  = "https://github.com/harnesslabs/cova"
-version     = "0.1.3"
+version     = "0.2.0"
 
 [dependencies]
 cova-algebra = { workspace = true }

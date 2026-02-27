@@ -289,10 +289,10 @@ where T: Hash + Eq + Clone + Debug
         .find_map(|((from, to), matrix)| {
           if from.same_content(k_plus_1_element) {
             Some(matrix.ncols()) // When k_plus_1_element is the source, its stalk dimension is
-                                 // num_cols
+          // num_cols
           } else if to.same_content(k_plus_1_element) {
             Some(matrix.nrows()) // When k_plus_1_element is the target, its stalk dimension is
-                                 // num_rows
+          // num_rows
           } else {
             None
           }
@@ -370,8 +370,8 @@ mod tests {
   use super::*;
   use crate::complexes::{Cube, CubicalComplex, Simplex, SimplicialComplex};
 
-  fn simplicial_complex_1d(
-  ) -> (SimplicialComplex, HashMap<(Simplex, Simplex), DMatrix<f64>>, Simplex, Simplex, Simplex) {
+  fn simplicial_complex_1d()
+  -> (SimplicialComplex, HashMap<(Simplex, Simplex), DMatrix<f64>>, Simplex, Simplex, Simplex) {
     let mut cc = SimplicialComplex::new();
     let v0 = Simplex::new(0, vec![0]);
     let v1 = Simplex::new(0, vec![1]);
@@ -493,7 +493,7 @@ mod tests {
     let v0 = Simplex::new(0, vec![0]); // R^1
     let v1 = Simplex::new(0, vec![1]); // R^2
     let v2 = Simplex::new(0, vec![2]); // R^3
-                                       // Edges
+    // Edges
     let e01 = Simplex::new(1, vec![0, 1]); // R^2
     let e02 = Simplex::new(1, vec![0, 2]); // R^2
     let e12 = Simplex::new(1, vec![1, 2]); // R^2

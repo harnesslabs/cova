@@ -87,6 +87,7 @@ pub mod prelude {
   //! ```
 
   pub use crate::{
+    Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, One, Sub, SubAssign, Zero,
     algebras::Algebra,
     arithmetic::{Additive, Multiplicative},
     category::Category,
@@ -96,7 +97,6 @@ pub mod prelude {
       VectorSpace,
     },
     rings::{Field, Ring},
-    Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, One, Sub, SubAssign, Zero,
   };
 }
 

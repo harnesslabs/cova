@@ -1060,9 +1060,9 @@ mod tests {
 
     assert_eq!(format!("{}", e12 * e01), "1e₀‚₂");
     assert_eq!(format!("{}", e02 * e12), "1e₀‚₁"); // e02 * e12 = e0 * e2 * e1 * e2 = -e0 *
-                                                   // e1 * e2
-                                                   // * e2 = -e0 * e1 * Q(e2) = -e0 * e1 * -1 = e0
-                                                   // * e1 = e01
+    // e1 * e2
+    // * e2 = -e0 * e1 * Q(e2) = -e0 * e1 * -1 = e0
+    // * e1 = e01
   }
 
   #[test]
@@ -1076,9 +1076,9 @@ mod tests {
     assert_eq!(format!("{}", e01 * e2), "1e₀‚₁‚₂");
     assert_eq!(format!("{}", e2 * e01), "1e₀‚₁‚₂");
     assert_eq!(format!("{}", e012 * e2), "-1e₀‚₁"); // e012 * e2 = e0 * e1 * e2 * e2 = e0 *
-                                                    // e1 *
-                                                    // Q(e2) = e0 * e1 * -1 = -e0 * e1 =
-                                                    // -e01
+    // e1 *
+    // Q(e2) = e0 * e1 * -1 = -e0 * e1 =
+    // -e01
   }
 
   /// Test that different quadratic forms cannot be mixed (compile-time safety).

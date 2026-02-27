@@ -78,7 +78,7 @@ dependencies = [
 
 [[package]]
 name = "cova"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "cova-algebra",
  "cova-solver",
@@ -88,7 +88,7 @@ dependencies = [
 
 [[package]]
 name = "cova-algebra"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "nalgebra",
  "num-traits",
@@ -96,7 +96,7 @@ dependencies = [
 
 [[package]]
 name = "cova-solver"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "clarabel",
  "cova-algebra",
@@ -105,7 +105,7 @@ dependencies = [
 
 [[package]]
 name = "cova-space"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "cova-algebra",
  "itertools 0.14.0",

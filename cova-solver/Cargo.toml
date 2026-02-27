@@ -10,7 +10,7 @@ license     = "AGPL-3.0"
 readme      = "README.md"
 repository  = "https://github.com/harnesslabs/cova"
 
-include = ["katex-header.html"]
+include = ["src/**/*", "Cargo.toml", "README.md", "katex-header.html"]
 
 [dependencies]
 clarabel     = "0.11"

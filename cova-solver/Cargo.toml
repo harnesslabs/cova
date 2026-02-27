@@ -1,5 +1,5 @@
 [package]
-edition = "2021"
+edition = "2024"
 name    = "cova-solver"
 version = "0.1.0"
 
@@ -10,7 +10,9 @@ license     = "AGPL-3.0"
 readme      = "README.md"
 repository  = "https://github.com/harnesslabs/cova"
 
+include = ["katex-header.html"]
+
 [dependencies]
 clarabel     = "0.11"
-cova-algebra = { path = "../cova-algebra" }
-thiserror    = "1.0"
+cova-algebra = { workspace = true }
+thiserror    = { workspace = true }

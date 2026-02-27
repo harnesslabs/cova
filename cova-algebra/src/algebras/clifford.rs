@@ -8,7 +8,9 @@
 //!
 //! - **Quadratic Form**: A function Q: V → F that satisfies Q(av) = a²Q(v) for all a ∈ F and v ∈ V.
 //!   In this implementation, we assume the quadratic form is diagonal, represented by a vector of
-//!   coefficients.
+//!   coefficients. The quadratic form is encoded at the type level using the
+//!   [`QuadraticFormMarker`] trait, ensuring that only elements with the same quadratic form can be
+//!   combined.
 //!
 //! - **Basis Blades**: The fundamental building blocks of a Clifford algebra. In an n-dimensional
 //!   space, there are 2ⁿ basis blades, formed by taking the exterior product of basis vectors.
@@ -24,19 +26,18 @@
 //! - The grade of a blade is determined by the number of set bits
 //! - Multiplication is implemented using the geometric product, which combines the exterior product
 //!   and the inner product defined by the quadratic form
+//! - **Compile-time safety**: The quadratic form is encoded as a type parameter, so operations
+//!   between elements with different quadratic forms result in compile-time errors
 //!
 //! # Examples
 //!
 //! ```
 //! #![feature(generic_const_exprs)]
-//! use cova_algebra::{
-//!   algebras::clifford::{CliffordAlgebra, QuadraticForm},
-//!   tensors::SVector,
-//! };
+//! use cova_algebra::algebras::clifford::{CliffordAlgebra, Signature};
 //!
 //! // Create a 3D Clifford algebra with signature (+, +, -)
-//! let quadratic_form = QuadraticForm::new(SVector::<f64, 3>::from_row_slice(&[1.0, 1.0, -1.0]));
-//! let algebra = CliffordAlgebra::new(quadratic_form);
+//! type MySignature = Signature<3, 1, 1, -1>;
+//! let algebra = CliffordAlgebra::<f64, 3, MySignature>::new();
 //!
 //! // Create basis vectors
 //! let e0 = algebra.blade([0]);
@@ -50,6 +51,13 @@
 //! // Example: e2 * e2 = -1 (using the quadratic form)
 //! assert_eq!(format!("{}", e2.clone() * e2), "-1");
 //! ```
+//!
+//! # Predefined Signatures
+//!
+//! Common quadratic forms are provided as type aliases:
+//! - [`Euclidean2D`], [`Euclidean3D`], [`Euclidean4D`]: Standard Euclidean spaces
+//! - [`Minkowski`]: Spacetime with signature (+, -, -, -)
+//! - [`AntiMinkowski`]: Spacetime with signature (-, +, +, +)
 //!
 //! # Geometric Interpretation
 //!
@@ -77,7 +85,10 @@
 //! - [Clifford Algebra](https://en.wikipedia.org/wiki/Clifford_algebra)
 //! - [Geometric Algebra](https://en.wikipedia.org/wiki/Geometric_algebra)
 
-use std::fmt::{Debug, Display, Formatter};
+use std::{
+  fmt::{Debug, Display, Formatter},
+  marker::PhantomData,
+};
 
 use num_traits::One;
 
@@ -90,40 +101,34 @@ use crate::{
   tensors::SVector,
 };
 
-/// A quadratic form on a vector space, represented in diagonal form.
+/// A marker trait for quadratic forms on a vector space.
+///
+/// This trait enables compile-time verification that Clifford algebra elements
+/// have compatible quadratic forms. By encoding the quadratic form as a type parameter,
+/// operations between elements with different forms result in compile-time errors.
 ///
 /// A quadratic form Q is a function that satisfies Q(av) = a²Q(v) for all scalars a and vectors v.
 /// In this implementation, we assume the quadratic form is diagonal, meaning it can be represented
 /// by a vector of coefficients where Q(v) = Σᵢ cᵢvᵢ².
 ///
-/// # Examples
+/// # Implementing Custom Quadratic Forms
 ///
 /// ```
-/// use cova_algebra::{algebras::clifford::QuadraticForm, tensors::SVector};
+/// use cova_algebra::{algebras::clifford::QuadraticFormMarker, rings::Field, tensors::SVector};
 ///
-/// // Create a quadratic form with coefficients [1, 1, -1]
-/// let q = QuadraticForm::new(SVector::<f64, 3>::from_row_slice(&[1.0, 1.0, -1.0]));
+/// // Define a custom quadratic form for 2D split-complex numbers
+/// #[derive(Copy, Clone, Debug)]
+/// pub struct SplitComplex;
+///
+/// impl<F: Field + From<f64>> QuadraticFormMarker<F, 2> for SplitComplex {
+///   fn coefficients() -> SVector<F, 2> { SVector::from_row_slice(&[F::from(1.0), F::from(-1.0)]) }
+/// }
 /// ```
-#[derive(Clone, Debug, PartialEq)]
-pub struct QuadraticForm<F: Field, const N: usize> {
-  coefficients: SVector<F, N>,
-}
-
-impl<F: Field + Copy, const N: usize> QuadraticForm<F, N> {
-  /// Creates a new quadratic form with the given coefficients.
+pub trait QuadraticFormMarker<F: Field, const N: usize>: 'static + Copy + Debug {
+  /// Returns the diagonal coefficients of the quadratic form.
   ///
-  /// # Arguments
-  ///
-  /// * `coefficients` - A vector of coefficients for the quadratic form
-  ///
-  /// # Examples
-  ///
-  /// ```
-  /// use cova_algebra::{algebras::clifford::QuadraticForm, tensors::SVector};
-  ///
-  /// let q = QuadraticForm::new(SVector::<f64, 3>::from_row_slice(&[1.0, 1.0, -1.0]));
-  /// ```
-  pub const fn new(coefficients: SVector<F, N>) -> Self { Self { coefficients } }
+  /// For a quadratic form Q(v) = Σᵢ cᵢvᵢ², this returns the vector [c₀, c₁, ..., cₙ₋₁].
+  fn coefficients() -> SVector<F, N>;
 
   /// Evaluates the quadratic form at a given vector.
   ///
@@ -134,24 +139,113 @@ impl<F: Field + Copy, const N: usize> QuadraticForm<F, N> {
   /// # Returns
   ///
   /// The value of Q(v) = Σᵢ cᵢvᵢ²
-  ///
-  /// # Examples
-  ///
-  /// ```
-  /// use cova_algebra::{algebras::clifford::QuadraticForm, tensors::SVector};
-  ///
-  /// let q = QuadraticForm::new(SVector::<f64, 3>::from_row_slice(&[1.0, 1.0, -1.0]));
-  /// let v = SVector::<f64, 3>::from_row_slice(&[1.0, 2.0, 3.0]);
-  /// assert_eq!(q.evaluate(&v), 1.0 + 4.0 - 9.0); // 1*1² + 1*2² + (-1)*3²
-  /// ```
-  pub fn evaluate(&self, v: &SVector<F, N>) -> F {
+  fn evaluate(v: &SVector<F, N>) -> F {
+    let coeffs = Self::coefficients();
     let mut result = F::zero();
     for i in 0..N {
-      result += self.coefficients[i] * v[i] * v[i];
+      result += coeffs[i] * v[i] * v[i];
     }
     result
   }
 }
+
+/// A generic signature type for defining quadratic forms via const generics.
+///
+/// This type allows defining quadratic forms using const parameters. For simple cases
+/// with up to 4 dimensions using ±1 coefficients, use the predefined type aliases.
+///
+/// # Type Parameters
+///
+/// * `N` - The dimension of the vector space
+/// * `C0`, `C1`, `C2`, `C3` - Coefficients as i64 values (typically 1, -1, or 0)
+///
+/// # Examples
+///
+/// ```
+/// use cova_algebra::algebras::clifford::Signature;
+///
+/// // Define a signature for Cl(2,1) - 2D space with one negative direction
+/// type MySig = Signature<3, 1, 1, -1>;
+/// ```
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Signature<
+  const N: usize,
+  const C0: i64 = 1,
+  const C1: i64 = 1,
+  const C2: i64 = 1,
+  const C3: i64 = 1,
+>;
+
+impl<const N: usize, const C0: i64, const C1: i64, const C2: i64, const C3: i64>
+  QuadraticFormMarker<f64, N> for Signature<N, C0, C1, C2, C3>
+{
+  fn coefficients() -> SVector<f64, N> {
+    let mut coeffs = SVector::<f64, N>::zeros();
+    if N > 0 {
+      coeffs[0] = C0 as f64;
+    }
+    if N > 1 {
+      coeffs[1] = C1 as f64;
+    }
+    if N > 2 {
+      coeffs[2] = C2 as f64;
+    }
+    if N > 3 {
+      coeffs[3] = C3 as f64;
+    }
+    // For N > 4, remaining coefficients default to 0 (could extend pattern)
+    coeffs
+  }
+}
+
+impl<const N: usize, const C0: i64, const C1: i64, const C2: i64, const C3: i64>
+  QuadraticFormMarker<f32, N> for Signature<N, C0, C1, C2, C3>
+{
+  fn coefficients() -> SVector<f32, N> {
+    let mut coeffs = SVector::<f32, N>::zeros();
+    if N > 0 {
+      coeffs[0] = C0 as f32;
+    }
+    if N > 1 {
+      coeffs[1] = C1 as f32;
+    }
+    if N > 2 {
+      coeffs[2] = C2 as f32;
+    }
+    if N > 3 {
+      coeffs[3] = C3 as f32;
+    }
+    coeffs
+  }
+}
+
+// ============================================================================
+// Predefined Signatures for Common Algebras
+// ============================================================================
+
+/// Euclidean 2D signature: (+, +)
+pub type Euclidean2D = Signature<2, 1, 1>;
+
+/// Euclidean 3D signature: (+, +, +)
+pub type Euclidean3D = Signature<3, 1, 1, 1>;
+
+/// Euclidean 4D signature: (+, +, +, +)
+pub type Euclidean4D = Signature<4, 1, 1, 1, 1>;
+
+/// Minkowski spacetime signature: (+, -, -, -)
+pub type Minkowski = Signature<4, 1, -1, -1, -1>;
+
+/// Anti-Minkowski spacetime signature: (-, +, +, +)
+pub type AntiMinkowski = Signature<4, -1, 1, 1, 1>;
+
+/// Split-complex numbers signature: (+, -)
+pub type SplitComplex = Signature<2, 1, -1>;
+
+/// Complex numbers as Cl(0,1): (-)
+pub type ComplexSig = Signature<1, -1>;
+
+/// Quaternions as Cl(0,2): (-, -)
+pub type QuaternionSig = Signature<2, -1, -1>;
 
 /// A Clifford algebra over a vector space with a given quadratic form.
 ///
@@ -163,45 +257,41 @@ impl<F: Field + Copy, const N: usize> QuadraticForm<F, N> {
 ///
 /// * `F` - The field over which the algebra is defined
 /// * `N` - The dimension of the underlying vector space
+/// * `Q` - The quadratic form marker type (ensures compile-time compatibility)
 ///
 /// # Examples
 ///
 /// ```
 /// #![feature(generic_const_exprs)]
-/// use cova_algebra::{
-///   algebras::clifford::{CliffordAlgebra, QuadraticForm},
-///   tensors::SVector,
-/// };
+/// use cova_algebra::algebras::clifford::{CliffordAlgebra, Euclidean3D};
 ///
-/// let quadratic_form = QuadraticForm::new(SVector::<f64, 3>::from_row_slice(&[1.0, 1.0, -1.0]));
-/// let algebra = CliffordAlgebra::new(quadratic_form);
+/// // Create a 3D Euclidean Clifford algebra
+/// let algebra = CliffordAlgebra::<f64, 3, Euclidean3D>::new();
+/// let e0 = algebra.blade([0]);
+/// let e1 = algebra.blade([1]);
 /// ```
-pub struct CliffordAlgebra<F: Field, const N: usize> {
-  quadratic_form: QuadraticForm<F, N>,
+pub struct CliffordAlgebra<F: Field, const N: usize, Q: QuadraticFormMarker<F, N>> {
+  _marker: PhantomData<(F, Q)>,
 }
 
-impl<F: Field + Copy, const N: usize> CliffordAlgebra<F, N>
+impl<F: Field + Copy, const N: usize, Q: QuadraticFormMarker<F, N>> CliffordAlgebra<F, N, Q>
 where [(); 1 << N]:
 {
-  /// Creates a new Clifford algebra with the given quadratic form.
-  ///
-  /// # Arguments
-  ///
-  /// * `quadratic_form` - The quadratic form defining the algebra
+  /// Creates a new Clifford algebra with the quadratic form specified by the type parameter.
   ///
   /// # Examples
   ///
   /// ```
   /// #![feature(generic_const_exprs)]
-  /// use cova_algebra::{
-  ///   algebras::clifford::{CliffordAlgebra, QuadraticForm},
-  ///   tensors::SVector,
-  /// };
+  /// use cova_algebra::algebras::clifford::{CliffordAlgebra, Euclidean3D, Minkowski};
   ///
-  /// let quadratic_form = QuadraticForm::new(SVector::<f64, 3>::from_row_slice(&[1.0, 1.0, -1.0]));
-  /// let algebra = CliffordAlgebra::new(quadratic_form);
+  /// // Create a 3D Euclidean Clifford algebra
+  /// let euclidean = CliffordAlgebra::<f64, 3, Euclidean3D>::new();
+  ///
+  /// // Create a Minkowski spacetime algebra
+  /// let spacetime = CliffordAlgebra::<f64, 4, Minkowski>::new();
   /// ```
-  pub const fn new(quadratic_form: QuadraticForm<F, N>) -> Self { Self { quadratic_form } }
+  pub const fn new() -> Self { Self { _marker: PhantomData } }
 
   /// Creates a new element in the algebra from a vector of coefficients.
   ///
@@ -214,17 +304,16 @@ where [(); 1 << N]:
   /// ```
   /// #![feature(generic_const_exprs)]
   /// use cova_algebra::{
-  ///   algebras::clifford::{CliffordAlgebra, QuadraticForm},
+  ///   algebras::clifford::{CliffordAlgebra, Euclidean3D},
   ///   tensors::SVector,
   /// };
   ///
-  /// let algebra =
-  ///   CliffordAlgebra::new(QuadraticForm::new(SVector::<f64, 3>::from_row_slice(&[1.0, 1.0, -1.0])));
+  /// let algebra = CliffordAlgebra::<f64, 3, Euclidean3D>::new();
   /// let element =
   ///   algebra.element(SVector::<f64, 8>::from_row_slice(&[1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]));
   /// ```
-  pub fn element(&self, value: SVector<F, { 1 << N }>) -> CliffordAlgebraElement<F, N> {
-    CliffordAlgebraElement { value, quadratic_form: Some(self.quadratic_form.clone()) }
+  pub fn element(&self, value: SVector<F, { 1 << N }>) -> CliffordAlgebraElement<F, N, Q> {
+    CliffordAlgebraElement { value, _marker: PhantomData }
   }
 
   /// Creates a basis blade with the given indices.
@@ -244,17 +333,13 @@ where [(); 1 << N]:
   ///
   /// ```
   /// #![feature(generic_const_exprs)]
-  /// use cova_algebra::{
-  ///   algebras::clifford::{CliffordAlgebra, QuadraticForm},
-  ///   tensors::SVector,
-  /// };
+  /// use cova_algebra::algebras::clifford::{CliffordAlgebra, Euclidean3D};
   ///
-  /// let algebra =
-  ///   CliffordAlgebra::new(QuadraticForm::new(SVector::<f64, 3>::from_row_slice(&[1.0, 1.0, -1.0])));
+  /// let algebra = CliffordAlgebra::<f64, 3, Euclidean3D>::new();
   /// let e1 = algebra.blade([1]);
   /// let e01 = algebra.blade([0, 1]);
   /// ```
-  pub fn blade<const I: usize>(&self, indices: [usize; I]) -> CliffordAlgebraElement<F, N> {
+  pub fn blade<const I: usize>(&self, indices: [usize; I]) -> CliffordAlgebraElement<F, N, Q> {
     // Validate indices are in range and sorted
     for i in 1..I {
       assert!(
@@ -270,7 +355,7 @@ where [(); 1 << N]:
     let mut value = SVector::<F, { 1 << N }>::zeros();
     value[bit_position] = <F as One>::one();
 
-    CliffordAlgebraElement { value, quadratic_form: Some(self.quadratic_form.clone()) }
+    CliffordAlgebraElement { value, _marker: PhantomData }
   }
 
   /// Maps a set of basis blade indices back to a bit position.
@@ -297,6 +382,13 @@ where [(); 1 << N]:
   }
 }
 
+impl<F: Field + Copy, const N: usize, Q: QuadraticFormMarker<F, N>> Default
+  for CliffordAlgebra<F, N, Q>
+where [(); 1 << N]:
+{
+  fn default() -> Self { Self::new() }
+}
+
 /// Computes the binomial coefficient C(n, k)
 fn binomial(n: usize, k: usize) -> usize {
   if k > n {
@@ -316,70 +408,79 @@ fn binomial(n: usize, k: usize) -> usize {
 /// An element of a Clifford algebra.
 ///
 /// An element is represented as a linear combination of basis blades, where each
-/// basis blade is a product of basis vectors.
+/// basis blade is a product of basis vectors. The quadratic form is encoded in the
+/// type parameter `Q`, ensuring compile-time compatibility between elements.
 ///
 /// # Type Parameters
 ///
-/// * `'a` - The lifetime of the reference to the quadratic form
 /// * `F` - The field over which the algebra is defined
 /// * `N` - The dimension of the underlying vector space
+/// * `Q` - The quadratic form marker type (ensures compile-time compatibility)
 ///
 /// # Examples
 ///
 /// ```
 /// #![feature(generic_const_exprs)]
-/// use cova_algebra::{
-///   algebras::clifford::{CliffordAlgebra, QuadraticForm},
-///   tensors::SVector,
-/// };
+/// use cova_algebra::algebras::clifford::{CliffordAlgebra, Euclidean3D};
 ///
-/// let algebra =
-///   CliffordAlgebra::new(QuadraticForm::new(SVector::<f64, 3>::from_row_slice(&[1.0, 1.0, -1.0])));
+/// let algebra = CliffordAlgebra::<f64, 3, Euclidean3D>::new();
 /// let e1 = algebra.blade([1]);
 /// let e2 = algebra.blade([2]);
-/// let sum = e1 + e2;
+/// let sum = e1 + e2; // Works: same quadratic form
 /// ```
-#[derive(Clone, Debug, PartialEq)]
-pub struct CliffordAlgebraElement<F: Field, const N: usize>
+///
+/// ```compile_fail
+/// #![feature(generic_const_exprs)]
+/// use cova_algebra::algebras::clifford::{CliffordAlgebra, Euclidean3D, Minkowski};
+///
+/// let euclidean = CliffordAlgebra::<f64, 3, Euclidean3D>::new();
+/// let minkowski = CliffordAlgebra::<f64, 4, Minkowski>::new();
+/// let e1 = euclidean.blade([1]);
+/// let f1 = minkowski.blade([1]);
+/// let sum = e1 + f1; // Compile error: different quadratic forms!
+/// ```
+#[derive(Clone, Copy, Debug)]
+pub struct CliffordAlgebraElement<F: Field, const N: usize, Q: QuadraticFormMarker<F, N>>
 where [(); 1 << N]: {
-  value:          SVector<F, { 1 << N }>,
-  quadratic_form: Option<QuadraticForm<F, N>>, // Owned quadratic form for element
+  value:   SVector<F, { 1 << N }>,
+  _marker: PhantomData<Q>,
 }
 
-// TODO: All of these impls should check the same bilinear space. This should probably be a compile
-// time thing.
+impl<F: Field, const N: usize, Q: QuadraticFormMarker<F, N>> PartialEq
+  for CliffordAlgebraElement<F, N, Q>
+where [(); 1 << N]:
+{
+  fn eq(&self, other: &Self) -> bool { self.value == other.value }
+}
 
-impl<F: Field, const N: usize> Add for CliffordAlgebraElement<F, N>
+// Compile-time safety: operations only work between elements with the same Q type parameter
+
+impl<F: Field, const N: usize, Q: QuadraticFormMarker<F, N>> Add for CliffordAlgebraElement<F, N, Q>
 where [(); 1 << N]:
 {
   type Output = Self;
 
   fn add(self, other: Self) -> Self::Output {
-    assert_eq!(self.quadratic_form, other.quadratic_form);
-    Self { value: self.value + other.value, quadratic_form: self.quadratic_form.clone() }
+    Self { value: self.value + other.value, _marker: PhantomData }
   }
 }
 
-impl<F: Field, const N: usize> AddAssign for CliffordAlgebraElement<F, N>
+impl<F: Field, const N: usize, Q: QuadraticFormMarker<F, N>> AddAssign
+  for CliffordAlgebraElement<F, N, Q>
 where [(); 1 << N]:
 {
-  fn add_assign(&mut self, rhs: Self) {
-    assert_eq!(self.quadratic_form, rhs.quadratic_form);
-    self.value += rhs.value;
-  }
+  fn add_assign(&mut self, rhs: Self) { self.value += rhs.value; }
 }
 
-impl<F: Field, const N: usize> Neg for CliffordAlgebraElement<F, N>
+impl<F: Field, const N: usize, Q: QuadraticFormMarker<F, N>> Neg for CliffordAlgebraElement<F, N, Q>
 where [(); 1 << N]:
 {
   type Output = Self;
 
-  fn neg(self) -> Self::Output {
-    Self { value: -self.value, quadratic_form: self.quadratic_form.clone() }
-  }
+  fn neg(self) -> Self::Output { Self { value: -self.value, _marker: PhantomData } }
 }
 
-impl<F: Field, const N: usize> Sub for CliffordAlgebraElement<F, N>
+impl<F: Field, const N: usize, Q: QuadraticFormMarker<F, N>> Sub for CliffordAlgebraElement<F, N, Q>
 where [(); 1 << N]:
 {
   type Output = Self;
@@ -387,24 +488,21 @@ where [(); 1 << N]:
   fn sub(self, other: Self) -> Self::Output { self + -other }
 }
 
-impl<F: Field, const N: usize> SubAssign for CliffordAlgebraElement<F, N>
+impl<F: Field, const N: usize, Q: QuadraticFormMarker<F, N>> SubAssign
+  for CliffordAlgebraElement<F, N, Q>
 where [(); 1 << N]:
 {
-  fn sub_assign(&mut self, rhs: Self) {
-    assert_eq!(self.quadratic_form, rhs.quadratic_form);
-    self.value -= rhs.value;
-  }
+  fn sub_assign(&mut self, rhs: Self) { self.value -= rhs.value; }
 }
 
-impl<F: Field, const N: usize> Mul for CliffordAlgebraElement<F, N>
+impl<F: Field, const N: usize, Q: QuadraticFormMarker<F, N>> Mul for CliffordAlgebraElement<F, N, Q>
 where [(); 1 << N]:
 {
   type Output = Self;
 
   fn mul(self, other: Self) -> Self::Output {
-    assert_eq!(self.quadratic_form, other.quadratic_form);
-    let quadratic_form =
-      self.quadratic_form.as_ref().expect("Both elements must have a quadratic form");
+    // Get the quadratic form coefficients from the type parameter
+    let quadratic_coeffs = Q::coefficients();
 
     let mut result = SVector::<F, { 1 << N }>::zeros();
 
@@ -458,7 +556,7 @@ where [(); 1 << N]:
 
         // Multiply by quadratic form coefficients for each repeated index
         for &idx in &repeated_indices {
-          coefficient *= quadratic_form.coefficients[idx];
+          coefficient *= quadratic_coeffs[idx];
         }
 
         // Add to the result
@@ -467,75 +565,100 @@ where [(); 1 << N]:
       }
     }
 
-    Self { value: result, quadratic_form: self.quadratic_form.clone() }
+    Self { value: result, _marker: PhantomData }
   }
 }
 
-impl<F: Field, const N: usize> MulAssign for CliffordAlgebraElement<F, N>
+impl<F: Field, const N: usize, Q: QuadraticFormMarker<F, N>> MulAssign
+  for CliffordAlgebraElement<F, N, Q>
 where [(); 1 << N]:
 {
   fn mul_assign(&mut self, rhs: Self) {
-    let result = self.clone() * rhs;
+    let result = *self * rhs;
     *self = result;
   }
 }
 
-impl<F: Field, const N: usize> Mul<F> for CliffordAlgebraElement<F, N>
+impl<F: Field, const N: usize, Q: QuadraticFormMarker<F, N>> Mul<F>
+  for CliffordAlgebraElement<F, N, Q>
 where [(); 1 << N]:
 {
   type Output = Self;
 
-  fn mul(self, rhs: F) -> Self::Output {
-    Self { value: self.value * rhs, quadratic_form: self.quadratic_form.clone() }
-  }
+  fn mul(self, rhs: F) -> Self::Output { Self { value: self.value * rhs, _marker: PhantomData } }
 }
 
-impl<F: Field, const N: usize> Multiplicative for CliffordAlgebraElement<F, N> where [(); 1 << N]: {}
-
-// TODO: This is weird... i'll use option to note the zero element.
-impl<F: Field, const N: usize> Zero for CliffordAlgebraElement<F, N>
+impl<F: Field, const N: usize, Q: QuadraticFormMarker<F, N>> Multiplicative
+  for CliffordAlgebraElement<F, N, Q>
 where [(); 1 << N]:
 {
-  fn zero() -> Self { Self { value: SVector::<F, { 1 << N }>::zeros(), quadratic_form: None } }
-
-  fn is_zero(&self) -> bool { self.value.iter().all(|x| x.is_zero()) }
 }
 
-impl<F: Field, const N: usize> Additive for CliffordAlgebraElement<F, N> where [(); 1 << N]: {}
-impl<F: Field, const N: usize> Group for CliffordAlgebraElement<F, N>
+impl<F: Field, const N: usize, Q: QuadraticFormMarker<F, N>> Zero
+  for CliffordAlgebraElement<F, N, Q>
 where [(); 1 << N]:
 {
-  fn identity() -> Self {
-    CliffordAlgebraElement {
-      value:          SVector::<F, { 1 << N }>::zeros(),
-      quadratic_form: None,
-    }
-  }
+  fn zero() -> Self { Self { value: SVector::<F, { 1 << N }>::zeros(), _marker: PhantomData } }
 
-  fn inverse(&self) -> Self {
-    Self { value: -self.value, quadratic_form: self.quadratic_form.clone() }
-  }
+  fn is_zero(&self) -> bool { self.value.iter().all(num_traits::Zero::is_zero) }
 }
-impl<F: Field, const N: usize> AbelianGroup for CliffordAlgebraElement<F, N> where [(); 1 << N]: {}
-impl<F: Field + Mul<Self>, const N: usize> LeftModule for CliffordAlgebraElement<F, N>
+
+impl<F: Field, const N: usize, Q: QuadraticFormMarker<F, N>> Additive
+  for CliffordAlgebraElement<F, N, Q>
+where [(); 1 << N]:
+{
+}
+
+impl<F: Field, const N: usize, Q: QuadraticFormMarker<F, N>> Group
+  for CliffordAlgebraElement<F, N, Q>
+where [(); 1 << N]:
+{
+  fn identity() -> Self { Self { value: SVector::<F, { 1 << N }>::zeros(), _marker: PhantomData } }
+
+  fn inverse(&self) -> Self { Self { value: -self.value, _marker: PhantomData } }
+}
+
+impl<F: Field, const N: usize, Q: QuadraticFormMarker<F, N>> AbelianGroup
+  for CliffordAlgebraElement<F, N, Q>
+where [(); 1 << N]:
+{
+}
+
+impl<F: Field + Mul<Self>, const N: usize, Q: QuadraticFormMarker<F, N>> LeftModule
+  for CliffordAlgebraElement<F, N, Q>
 where [(); 1 << N]:
 {
   type Ring = F;
 }
-impl<F: Field + Mul<Self>, const N: usize> RightModule for CliffordAlgebraElement<F, N>
-where [(); 1 << N]:
-{
-  type Ring = F;
-}
-impl<F: Field + Mul<Self>, const N: usize> TwoSidedModule for CliffordAlgebraElement<F, N>
-where [(); 1 << N]:
-{
-  type Ring = F;
-}
-impl<F: Field + Mul<Self>, const N: usize> VectorSpace for CliffordAlgebraElement<F, N> where [(); 1 << N]: {}
-impl<F: Field + Mul<Self>, const N: usize> Algebra for CliffordAlgebraElement<F, N> where [(); 1 << N]: {}
 
-impl<F: Field + Display, const N: usize> Display for CliffordAlgebraElement<F, N>
+impl<F: Field + Mul<Self>, const N: usize, Q: QuadraticFormMarker<F, N>> RightModule
+  for CliffordAlgebraElement<F, N, Q>
+where [(); 1 << N]:
+{
+  type Ring = F;
+}
+
+impl<F: Field + Mul<Self>, const N: usize, Q: QuadraticFormMarker<F, N>> TwoSidedModule
+  for CliffordAlgebraElement<F, N, Q>
+where [(); 1 << N]:
+{
+  type Ring = F;
+}
+
+impl<F: Field + Mul<Self>, const N: usize, Q: QuadraticFormMarker<F, N>> VectorSpace
+  for CliffordAlgebraElement<F, N, Q>
+where [(); 1 << N]:
+{
+}
+
+impl<F: Field + Mul<Self>, const N: usize, Q: QuadraticFormMarker<F, N>> Algebra
+  for CliffordAlgebraElement<F, N, Q>
+where [(); 1 << N]:
+{
+}
+
+impl<F: Field + Display, const N: usize, Q: QuadraticFormMarker<F, N>> Display
+  for CliffordAlgebraElement<F, N, Q>
 where [(); 1 << N]:
 {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -583,11 +706,11 @@ where [(); 1 << N]:
       generate_combinations(0, N, grade, &mut indices, &mut combinations);
 
       // Sort combinations by their bit position
-      combinations.sort_by_key(|indices| CliffordAlgebra::<F, N>::blade_indices_to_bit(indices));
+      combinations.sort_by_key(|indices| CliffordAlgebra::<F, N, Q>::blade_indices_to_bit(indices));
 
       // Print each combination in order
       for indices in combinations {
-        let bit_position = CliffordAlgebra::<F, N>::blade_indices_to_bit(&indices);
+        let bit_position = CliffordAlgebra::<F, N, Q>::blade_indices_to_bit(&indices);
         if !self.value[bit_position].is_zero() {
           if !first {
             write!(f, " + ")?;
@@ -638,13 +761,9 @@ fn generate_combinations(
 ///
 /// ```
 /// #![feature(generic_const_exprs)]
-/// use cova_algebra::{
-///   algebras::clifford::{CliffordAlgebra, QuadraticForm},
-///   tensors::SVector,
-/// };
+/// use cova_algebra::algebras::clifford::{CliffordAlgebra, Euclidean3D};
 ///
-/// let algebra =
-///   CliffordAlgebra::new(QuadraticForm::new(SVector::<f64, 3>::from_row_slice(&[1.0, 1.0, -1.0])));
+/// let algebra = CliffordAlgebra::<f64, 3, Euclidean3D>::new();
 /// let e1 = algebra.blade([1]);
 ///
 /// // Both of these are valid thanks to this macro
@@ -656,12 +775,12 @@ fn generate_combinations(
 #[macro_export]
 macro_rules! impl_mul_scalar_clifford {
   ($($t:ty)*) => ($(
-    impl<const N: usize> Mul<CliffordAlgebraElement<$t, N>> for $t
+    impl<const N: usize, Q: QuadraticFormMarker<$t, N>> Mul<CliffordAlgebraElement<$t, N, Q>> for $t
     where [(); 1 << N]:
     {
-      type Output = CliffordAlgebraElement<$t, N>;
+      type Output = CliffordAlgebraElement<$t, N, Q>;
 
-      fn mul(self, rhs: CliffordAlgebraElement<$t, N>) -> Self::Output { rhs * self }
+      fn mul(self, rhs: CliffordAlgebraElement<$t, N, Q>) -> Self::Output { rhs * self }
     }
   )*)
 }
@@ -792,15 +911,14 @@ fn blade_indices_to_bit<const N: usize>(indices: &[usize]) -> usize {
 mod tests {
   use super::*;
 
-  fn clifford_algebra_non_euclidean() -> CliffordAlgebra<f64, 3> {
-    let quadratic_form = QuadraticForm::new(SVector::<f64, 3>::from_row_slice(&[1.0, 1.0, -1.0]));
-    CliffordAlgebra::new(quadratic_form)
+  /// Non-Euclidean signature: (+, +, -)
+  type NonEuclidean3D = Signature<3, 1, 1, -1>;
+
+  fn clifford_algebra_non_euclidean() -> CliffordAlgebra<f64, 3, NonEuclidean3D> {
+    CliffordAlgebra::new()
   }
 
-  fn clifford_algebra_euclidean() -> CliffordAlgebra<f64, 3> {
-    let quadratic_form = QuadraticForm::new(SVector::<f64, 3>::from_row_slice(&[1.0, 1.0, 1.0]));
-    CliffordAlgebra::new(quadratic_form)
-  }
+  fn clifford_algebra_euclidean() -> CliffordAlgebra<f64, 3, Euclidean3D> { CliffordAlgebra::new() }
 
   #[test]
   fn test_display_order() {
@@ -829,20 +947,20 @@ mod tests {
   #[test]
   fn test_blade_indices_to_bit() {
     // Test scalar (empty indices)
-    assert_eq!(CliffordAlgebra::<f64, 3>::blade_indices_to_bit(&[]), 0);
+    assert_eq!(CliffordAlgebra::<f64, 3, Euclidean3D>::blade_indices_to_bit(&[]), 0);
 
     // Test vectors
-    assert_eq!(CliffordAlgebra::<f64, 3>::blade_indices_to_bit(&[0]), 1);
-    assert_eq!(CliffordAlgebra::<f64, 3>::blade_indices_to_bit(&[1]), 2);
-    assert_eq!(CliffordAlgebra::<f64, 3>::blade_indices_to_bit(&[2]), 3);
+    assert_eq!(CliffordAlgebra::<f64, 3, Euclidean3D>::blade_indices_to_bit(&[0]), 1);
+    assert_eq!(CliffordAlgebra::<f64, 3, Euclidean3D>::blade_indices_to_bit(&[1]), 2);
+    assert_eq!(CliffordAlgebra::<f64, 3, Euclidean3D>::blade_indices_to_bit(&[2]), 3);
 
     // Test bivectors
-    assert_eq!(CliffordAlgebra::<f64, 3>::blade_indices_to_bit(&[0, 1]), 4);
-    assert_eq!(CliffordAlgebra::<f64, 3>::blade_indices_to_bit(&[0, 2]), 5);
-    assert_eq!(CliffordAlgebra::<f64, 3>::blade_indices_to_bit(&[1, 2]), 6);
+    assert_eq!(CliffordAlgebra::<f64, 3, Euclidean3D>::blade_indices_to_bit(&[0, 1]), 4);
+    assert_eq!(CliffordAlgebra::<f64, 3, Euclidean3D>::blade_indices_to_bit(&[0, 2]), 5);
+    assert_eq!(CliffordAlgebra::<f64, 3, Euclidean3D>::blade_indices_to_bit(&[1, 2]), 6);
 
     // Test trivector
-    assert_eq!(CliffordAlgebra::<f64, 3>::blade_indices_to_bit(&[0, 1, 2]), 7);
+    assert_eq!(CliffordAlgebra::<f64, 3, Euclidean3D>::blade_indices_to_bit(&[0, 1, 2]), 7);
   }
 
   #[test]
@@ -896,10 +1014,10 @@ mod tests {
     let e2 = algebra.blade([2]);
 
     // Test anti-commutativity of basis vectors (clone to avoid move)
-    assert_eq!(format!("{}", e0.clone() * e1.clone()), "1e₀‚₁");
-    assert_eq!(format!("{}", e1.clone() * e0.clone()), "-1e₀‚₁");
-    assert_eq!(format!("{}", e1.clone() * e2.clone()), "1e₁‚₂");
-    assert_eq!(format!("{}", e2.clone() * e1), "-1e₁‚₂");
+    assert_eq!(format!("{}", e0 * e1), "1e₀‚₁");
+    assert_eq!(format!("{}", e1 * e0), "-1e₀‚₁");
+    assert_eq!(format!("{}", e1 * e2), "1e₁‚₂");
+    assert_eq!(format!("{}", e2 * e1), "-1e₁‚₂");
   }
 
   #[test]
@@ -911,9 +1029,9 @@ mod tests {
     let e2 = algebra.blade([2]);
 
     // Test scalar multiplication (clone to avoid move)
-    assert_eq!(format!("{}", one.clone() * e1.clone()), "1e₁");
-    assert_eq!(format!("{}", e1 * one.clone()), "1e₁");
-    assert_eq!(format!("{}", one.clone() * e2.clone()), "1e₂");
+    assert_eq!(format!("{}", one * e1), "1e₁");
+    assert_eq!(format!("{}", e1 * one), "1e₁");
+    assert_eq!(format!("{}", one * e2), "1e₂");
     assert_eq!(format!("{}", e2 * one), "1e₂");
   }
 
@@ -925,9 +1043,9 @@ mod tests {
     let e2 = algebra.blade([2]);
 
     // Test quadratic form application
-    assert_eq!(format!("{}", e0.clone() * e0), "1"); // Q(e0) = 1
-    assert_eq!(format!("{}", e1.clone() * e1), "1"); // Q(e1) = 1
-    assert_eq!(format!("{}", e2.clone() * e2), "-1"); // Q(e2) = -1
+    assert_eq!(format!("{}", e0 * e0), "1"); // Q(e0) = 1
+    assert_eq!(format!("{}", e1 * e1), "1"); // Q(e1) = 1
+    assert_eq!(format!("{}", e2 * e2), "-1"); // Q(e2) = -1
   }
 
   #[test]
@@ -938,14 +1056,13 @@ mod tests {
     let e02 = algebra.blade([0, 2]);
 
     // Test multiplication of bivectors
-    assert_eq!(format!("{}", e01.clone() * e12.clone()), "1e₀‚₂"); // e01 * e12 = e0 * e1 * e1 * e2 = e0 * Q(e1) * e2 = e0 * 1 * e2 = e0 * e2 = e02
+    assert_eq!(format!("{}", e01 * e12), "1e₀‚₂"); // e01 * e12 = e0 * e1 * e1 * e2 = e0 * Q(e1) * e2 = e0 * 1 * e2 = e0 * e2 = e02
 
-    assert_eq!(format!("{}", e12.clone() * e01), "1e₀‚₂");
-    assert_eq!(format!("{}", e02.clone() * e12), "1e₀‚₁"); // e02 * e12 = e0 * e2 * e1 * e2 = -e0 *
-                                                           // e1 * e2
-                                                           // * e2 = -e0 * e1 * Q(e2) = -e0 * e1 *
-                                                           //   -1 = e0
-                                                           // * e1 = e01
+    assert_eq!(format!("{}", e12 * e01), "1e₀‚₂");
+    assert_eq!(format!("{}", e02 * e12), "1e₀‚₁"); // e02 * e12 = e0 * e2 * e1 * e2 = -e0 *
+    // e1 * e2
+    // * e2 = -e0 * e1 * Q(e2) = -e0 * e1 * -1 = e0
+    // * e1 = e01
   }
 
   #[test]
@@ -956,11 +1073,30 @@ mod tests {
     let e012 = algebra.blade([0, 1, 2]);
 
     // Test multiplication with trivector
-    assert_eq!(format!("{}", e01.clone() * e2.clone()), "1e₀‚₁‚₂");
-    assert_eq!(format!("{}", e2.clone() * e01), "1e₀‚₁‚₂");
-    assert_eq!(format!("{}", e012.clone() * e2), "-1e₀‚₁"); // e012 * e2 = e0 * e1 * e2 * e2 = e0 *
-                                                            // e1 *
-                                                            // Q(e2) = e0 * e1 * -1 = -e0 * e1 =
-                                                            // -e01
+    assert_eq!(format!("{}", e01 * e2), "1e₀‚₁‚₂");
+    assert_eq!(format!("{}", e2 * e01), "1e₀‚₁‚₂");
+    assert_eq!(format!("{}", e012 * e2), "-1e₀‚₁"); // e012 * e2 = e0 * e1 * e2 * e2 = e0 *
+    // e1 *
+    // Q(e2) = e0 * e1 * -1 = -e0 * e1 =
+    // -e01
+  }
+
+  /// Test that different quadratic forms cannot be mixed (compile-time safety).
+  /// This test exists to document the expected behavior - mixing types should not compile.
+  #[test]
+  fn test_type_safety() {
+    // These two algebras have different quadratic forms encoded in their types
+    let euclidean = CliffordAlgebra::<f64, 3, Euclidean3D>::new();
+    let non_euclidean = clifford_algebra_non_euclidean();
+
+    let e1_euclidean = euclidean.blade([1]);
+    let _e1_non_euclidean = non_euclidean.blade([1]);
+
+    // The following would NOT compile (uncomment to verify):
+    // let sum = e1_euclidean + e1_non_euclidean; // Error: mismatched types
+
+    // But same-type operations work fine
+    let e2_euclidean = euclidean.blade([2]);
+    let _sum = e1_euclidean + e2_euclidean; // OK: same quadratic form
   }
 }

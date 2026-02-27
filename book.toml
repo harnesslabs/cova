@@ -1,10 +1,9 @@
 [book]
-authors      = ["Harness Lab"]
-description  = "Cova: A Rust ecosystem for mathematical abstractions and computations, focusing on extensible implementations of mathematical structures and algorithms."
-language     = "en"
-multilingual = false
-src          = "."
-title        = "Cova: Abstract Mathematics made Computational"
+authors     = ["Harness Lab"]
+description = "Cova: A Rust ecosystem for mathematical abstractions and computations, focusing on extensible implementations of mathematical structures and algorithms."
+language    = "en"
+src         = "."
+title       = "Cova: Abstract Mathematics made Computational"
 
 [build]
 build-dir                 = "docs"

@@ -289,10 +289,10 @@ where T: Hash + Eq + Clone + Debug
         .find_map(|((from, to), matrix)| {
           if from.same_content(k_plus_1_element) {
             Some(matrix.ncols()) // When k_plus_1_element is the source, its stalk dimension is
-                                 // num_cols
+          // num_cols
           } else if to.same_content(k_plus_1_element) {
             Some(matrix.nrows()) // When k_plus_1_element is the target, its stalk dimension is
-                                 // num_rows
+          // num_rows
           } else {
             None
           }
@@ -331,27 +331,25 @@ where T: Hash + Eq + Clone + Debug
         let boundary_with_orientations = k_plus_1_element.boundary_with_orientations();
         if let Some((_, orientation_coeff)) =
           boundary_with_orientations.iter().find(|(face, _)| face.same_content(k_element))
-        {
-          if let Some(restriction_matrix) =
+          && let Some(restriction_matrix) =
             self.restrictions.get(&(k_element.clone(), k_plus_1_element.clone()))
-          {
-            // Signed matrix
-            let mut signed = restriction_matrix.clone();
-            if *orientation_coeff < 0 {
-              for val in signed.iter_mut() {
-                *val = -*val;
-              }
-            } else if *orientation_coeff == 0 {
-              signed.fill(F::zero());
+        {
+          // Signed matrix
+          let mut signed = restriction_matrix.clone();
+          if *orientation_coeff < 0 {
+            for val in signed.iter_mut() {
+              *val = -*val;
             }
-
-            // Place into result
-            let row_offset = row_offsets[row_idx];
-            let col_offset = col_offsets[col_idx];
-            let r_rows = signed.nrows();
-            let r_cols = signed.ncols();
-            result.view_mut((row_offset, col_offset), (r_rows, r_cols)).copy_from(&signed);
+          } else if *orientation_coeff == 0 {
+            signed.fill(F::zero());
           }
+
+          // Place into result
+          let row_offset = row_offsets[row_idx];
+          let col_offset = col_offsets[col_idx];
+          let r_rows = signed.nrows();
+          let r_cols = signed.ncols();
+          result.view_mut((row_offset, col_offset), (r_rows, r_cols)).copy_from(&signed);
         }
       }
     }
@@ -370,8 +368,8 @@ mod tests {
   use super::*;
   use crate::complexes::{Cube, CubicalComplex, Simplex, SimplicialComplex};
 
-  fn simplicial_complex_1d(
-  ) -> (SimplicialComplex, HashMap<(Simplex, Simplex), DMatrix<f64>>, Simplex, Simplex, Simplex) {
+  fn simplicial_complex_1d()
+  -> (SimplicialComplex, HashMap<(Simplex, Simplex), DMatrix<f64>>, Simplex, Simplex, Simplex) {
     let mut cc = SimplicialComplex::new();
     let v0 = Simplex::new(0, vec![0]);
     let v1 = Simplex::new(0, vec![1]);
@@ -493,7 +491,7 @@ mod tests {
     let v0 = Simplex::new(0, vec![0]); // R^1
     let v1 = Simplex::new(0, vec![1]); // R^2
     let v2 = Simplex::new(0, vec![2]); // R^3
-                                       // Edges
+    // Edges
     let e01 = Simplex::new(1, vec![0, 1]); // R^2
     let e02 = Simplex::new(1, vec![0, 2]); // R^2
     let e12 = Simplex::new(1, vec![1, 2]); // R^2

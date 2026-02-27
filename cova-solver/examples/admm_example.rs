@@ -4,7 +4,7 @@
 //! for solving various convex optimization problems.
 
 use cova_algebra::tensors::{DMatrix, DVector};
-use cova_solver::{admm::AdmmSolver, SolverResult};
+use cova_solver::{SolverResult, admm::AdmmSolver};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
   println!("ADMM Examples using Clarabel\n");

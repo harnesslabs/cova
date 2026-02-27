@@ -141,7 +141,7 @@ use std::collections::HashMap;
 
 use cova_algebra::{
   rings::Field,
-  tensors::{compute_quotient_basis, image, kernel, DMatrix, DVector},
+  tensors::{DMatrix, DVector, compute_quotient_basis, image, kernel},
 };
 
 use super::*;
@@ -1240,11 +1240,7 @@ impl<T: ComplexElement> Collection for Complex<T> {
   type Item = T;
 
   fn contains(&self, point: &Self::Item) -> bool {
-    if let Some(id) = point.id() {
-      self.elements.contains_key(&id)
-    } else {
-      false
-    }
+    if let Some(id) = point.id() { self.elements.contains_key(&id) } else { false }
   }
 
   fn is_empty(&self) -> bool { self.elements.is_empty() }
@@ -1373,7 +1369,7 @@ impl<T: ComplexElement> Topology for Complex<T> {
     self.cofaces(item)
   }
 
-  fn boundary<R: Ring + Copy>(&self, item: &Self::Item) -> Chain<Self, R> {
+  fn boundary<R: Ring + Copy>(&'_ self, item: &Self::Item) -> Chain<'_, Self, R> {
     if item.dimension() == 0 {
       return Chain::new(self);
     }

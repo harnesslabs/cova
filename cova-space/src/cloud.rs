@@ -140,11 +140,11 @@ mod tests {
   #[test]
   fn test_norm() {
     let v1 = create_test_vector1(); // [1.0, 2.0]
-                                    // 1.0*1.0 + 2.0*2.0 = 1.0 + 4.0 = 5.0
+    // 1.0*1.0 + 2.0*2.0 = 1.0 + 4.0 = 5.0
     assert_eq!(Cloud::<2>::norm(v1), 5.0_f64.sqrt());
 
     let v2 = create_test_vector2(); // [3.0, 4.0]
-                                    // 3.0*3.0 + 4.0*4.0 = 9.0 + 16.0 = 25.0
+    // 3.0*3.0 + 4.0*4.0 = 9.0 + 16.0 = 25.0
     assert_eq!(Cloud::<2>::norm(v2), 25.0_f64.sqrt());
   }
 
@@ -152,8 +152,8 @@ mod tests {
   fn test_distance() {
     let v1 = create_test_vector1(); // [1.0, 2.0]
     let v2 = create_test_vector2(); // [3.0, 4.0]
-                                    // v1 - v2 = [-2.0, -2.0]
-                                    // norm([-2.0, -2.0]) = (-2.0)*(-2.0) + (-2.0)*(-2.0) = 4.0 + 4.0 = 8.0
+    // v1 - v2 = [-2.0, -2.0]
+    // norm([-2.0, -2.0]) = (-2.0)*(-2.0) + (-2.0)*(-2.0) = 4.0 + 4.0 = 8.0
     assert_eq!(Cloud::<2>::distance(v1, v2), 8.0_f64.sqrt());
   }
 }

@@ -15,8 +15,8 @@ use clarabel::{algebra::*, solver::*};
 use cova_algebra::tensors::{DMatrix, DVector};
 
 use crate::{
-  traits::{OptimizationProblem, Solution},
   SolverError, SolverResult,
+  traits::{OptimizationProblem, Solution},
 };
 
 /// ADMM parameters

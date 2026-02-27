@@ -189,15 +189,15 @@ impl<T: Hash + Eq + Clone> Lattice<T> {
 
       // Apply updates
       for (a, b) in updates {
-        if let Some(node_a) = self.nodes.get_mut(&a) {
-          if node_a.successors.insert(b.clone()) {
-            changed = true;
-          }
+        if let Some(node_a) = self.nodes.get_mut(&a)
+          && node_a.successors.insert(b.clone())
+        {
+          changed = true;
         }
-        if let Some(node_b) = self.nodes.get_mut(&b) {
-          if node_b.predecessors.insert(a) {
-            changed = true;
-          }
+        if let Some(node_b) = self.nodes.get_mut(&b)
+          && node_b.predecessors.insert(a)
+        {
+          changed = true;
         }
       }
     }
@@ -602,7 +602,7 @@ impl<T: Hash + Eq + Clone + std::fmt::Display + Ord> Lattice<T> {
     // Define nodes
     for node_key_ptr in &sorted_node_keys {
       let node_key = *node_key_ptr; // node_key is &T
-                                    // node_key.to_string() requires T: std::fmt::Display
+      // node_key.to_string() requires T: std::fmt::Display
       writeln!(file, "  \"{}\";", escape_dot_label(&node_key.to_string()))?;
     }
     writeln!(file)?; // Blank line for readability
@@ -624,11 +624,11 @@ impl<T: Hash + Eq + Clone + std::fmt::Display + Ord> Lattice<T> {
             if intermediate_key == succ_key {
               continue;
             }
-            if let Some(intermediate_node_w) = self.nodes.get(intermediate_key) {
-              if intermediate_node_w.successors.contains(succ_key) {
-                is_immediate = false;
-                break;
-              }
+            if let Some(intermediate_node_w) = self.nodes.get(intermediate_key)
+              && intermediate_node_w.successors.contains(succ_key)
+            {
+              is_immediate = false;
+              break;
             }
           }
 

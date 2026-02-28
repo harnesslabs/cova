@@ -58,6 +58,7 @@ Add any additional context or notes here.
 - [ ] I have updated the documentation accordingly
 - [ ] I have added tests that prove my fix/feature works
 - [ ] All tests pass locally
+- [ ] Benchmarks still compile (if applicable: `cargo bench --no-run`)
 
 ## 📸 Screenshots
 <!-- If applicable, add screenshots to help explain your changes -->

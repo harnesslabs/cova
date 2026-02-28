@@ -15,3 +15,22 @@ include = ["src/**/*", "Cargo.toml", "README.md", "katex-header.html"]
 [dependencies]
 nalgebra   = { workspace = true, features = ["std"] }
 num-traits = { workspace = true }
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+harness = false
+name    = "algebras"
+
+[[bench]]
+harness = false
+name    = "arithmetic"
+
+[[bench]]
+harness = false
+name    = "modules"
+
+[[bench]]
+harness = false
+name    = "tensors"
